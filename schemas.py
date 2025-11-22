@@ -1,48 +1,49 @@
 """
-Database Schemas
+Database Schemas for Crypto-Reward Puzzle App
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents a collection in MongoDB. The collection name
+is the lowercase of the class name (e.g., User -> "user").
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
-
-# Example schemas (replace with your own):
+from typing import Optional, List, Literal
+from datetime import datetime
 
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    username: str = Field(..., description="Unique username")
+    ton_address: Optional[str] = Field(None, description="User-provided TON wallet address")
+    referred_by: Optional[str] = Field(None, description="Referrer username if any")
+    is_banned: bool = Field(False, description="Whether the user is banned")
+    balance: int = Field(0, ge=0, description="Reward points balance (not real crypto)")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class Gamesettings(BaseModel):
+    key: str
+    value: str
 
-# Add your own schemas here:
-# --------------------------------------------------
+class Gamesession(BaseModel):
+    username: str
+    game: Literal["word", "tiles", "parking"]
+    score: int = Field(0, ge=0)
+    duration_sec: int = Field(0, ge=0)
+    created_at: Optional[datetime] = None
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Reward(BaseModel):
+    username: str
+    game: Literal["word", "tiles", "parking"]
+    score: int = Field(..., ge=0)
+    points_awarded: int = Field(..., ge=0)
+    reason: str = Field(...)
+
+class Withdrawalrequest(BaseModel):
+    username: str
+    ton_address: str
+    points: int = Field(..., ge=1)
+    status: Literal["pending", "approved", "rejected"] = "pending"
+    note: Optional[str] = None
+
+# Optional: basic anti-cheat log
+class Anticheat(BaseModel):
+    username: str
+    game: str
+    score: int
+    flag: str
